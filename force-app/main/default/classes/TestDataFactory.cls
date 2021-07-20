@@ -103,7 +103,7 @@ public with sharing class TestDataFactory {
     **/
     public static List<Order> ConstructOrders(Integer cnt, List<Account> accts) {        
         List<Order> ordersToBeCreated = new List<Order>();
-          
+        
         for (Integer i = 0; i < cnt; i++) {
             Order order = new Order(
                 AccountId = accts.get(Math.mod(i, accts.size())).Id,
@@ -128,7 +128,7 @@ public with sharing class TestDataFactory {
         for (Integer i = 0; i < cnt; i++) {
             OrderItem orderItem = new OrderItem(
                 Quantity = Constants.DEFAULT_ROWS,
-                UnitPrice = 250,
+                UnitPrice = 10,
                 OrderId = ords.get(Math.mod(i, ords.size())).Id,
                 PricebookEntryId = pbes.get(Math.mod(i, pbes.size())).Id
             );
@@ -167,5 +167,4 @@ public with sharing class TestDataFactory {
     public static void verifyQuantityOrdered(Product2 originalProduct, Product2 updatedProduct, Integer qtyOrdered) {
         System.assertEquals(updatedProduct.Quantity_Ordered__c, originalProduct.Quantity_Ordered__c + qtyOrdered);
     }
-
 }

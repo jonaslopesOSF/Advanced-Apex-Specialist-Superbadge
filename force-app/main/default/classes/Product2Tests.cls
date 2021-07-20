@@ -1,5 +1,5 @@
 @IsTest(seeAllData = false)
-private with sharing class Product2Tests {
+private class Product2Tests {
     /**
      * @name product2Extension_UnitTest
      * @description UnitTest for product2Extension
@@ -13,8 +13,8 @@ private with sharing class Product2Tests {
         Test.stopTest();
     }
     
-    @IsTest(seeAllData = false)
-    static void Product2Extension_UnitTest() {
+    @IsTest
+    private static void Product2Extension_UnitTest() {
         Product2 prod = new Product2(name='Test', isActive=true);
         ApexPages.StandardController controller = new ApexPages.StandardController(prod);
         Product2Extension ext = new Product2Extension(controller);
@@ -74,4 +74,26 @@ private with sharing class Product2Tests {
         System.assertEquals(Constants.DEFAULT_ROWS, productsCreated.size());
         System.assertEquals(Constants.DEFAULT_ROWS, priceBookEntryCreated.size());
     }
+    
+    @IsTest
+    private static void Product2Trigger_UnitTest() {
+        Account account = new Account(Name = 'Account - ');
+        insert account;
+        Order order = TestDataFactory.ConstructOrders(1, new List<Account>{account}).get(0);
+        insert order;
+        List<Product2> products = TestDataFactory.ConstructProducts(1);
+        insert products;
+        List<PriceBookEntry> priceBookEntries = TestDataFactory.ConstructPricebookEntries(products);
+        insert priceBookEntries;
+        List<OrderItem> orderItems = TestDataFactory.ConstructOrderItems(products.size(), priceBookEntries, new List<Order>{order});
+        insert orderItems;
+        
+        Test.startTest();
+            order.Status = Constants.ACTIVATED_ORDER_STATUS;
+            update order;
+        Test.stopTest();
+        
+        List<Product2> productsUpdated = [SELECT Id, Quantity_Ordered__c FROM Product2 Order By Id ASC];
+        TestDataFactory.verifyQuantityOrdered(products[0], productsUpdated[0], Constants.DEFAULT_ROWS);
+    } 
 }

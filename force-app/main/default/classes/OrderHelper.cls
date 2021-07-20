@@ -12,10 +12,12 @@ public with sharing class OrderHelper {
         
         for (Integer i = 0; i < newList.size(); i++){
             if (newList[i].Status == Constants.ACTIVATED_ORDER_STATUS && 
-                oldList[i].Status != Constants.ACTIVATED_ORDER_STATUS) {
+                oldList[i].Status == Constants.DRAFT_ORDER_STATUS) {
                 orderIds.add(newList[i].Id);
             }
         }
+        
+        RollUpOrderItems(orderIds);
     }
 
     /**
@@ -27,16 +29,30 @@ public with sharing class OrderHelper {
     public static void RollUpOrderItems(Set<Id> activatedOrderIds){
         //ToDo: Declare a Map named "productMap" of Ids to Product2 records
         Map<Id, Product2> productMap = new Map<Id, Product2>();
-
+        Set<Id> productIds = new Set<Id>();
+        
         //ToDo: Loop through a query of OrderItems related to the activatedOrderIds
-        for (OrderItem oi : [SELECT Id, Product2Id FROM OrderItem WHERE OrderId IN :activatedOrderIds]) {
+        for (OrderItem oi : [SELECT Id, Product2.Name, Product2Id FROM OrderItem WHERE OrderId IN :activatedOrderIds]) {
             //ToDo: Populate the map with the Id of the related Product2 as the key and Product2 record as the value
             productMap.put(oi.Product2Id, oi.Product2);
         }	
 
         //ToDo: Loop through a query that aggregates the OrderItems related to the Products in the ProductMap keyset
-
+        AggregateResult[] aggregatedResults  = [SELECT Product2Id, SUM(Quantity) aggregatedQuantity 
+                                                FROM OrderItem 
+                                                WHERE Product2Id IN :productMap.keySet() 
+                                                GROUP BY Product2Id];
+        
+        for (AggregateResult ar : aggregatedResults)  {
+            String key = (String) ar.get('Product2Id');
+            Decimal quantity = (Decimal) ar.get('aggregatedQuantity');
+            productMap.get(key).Quantity_Ordered__c = Integer.valueOf(quantity);
+        }
+        
         //ToDo: Perform an update on the records in the productMap
+        if(productMap != null && productMap.size() > 0) {
+            update productMap.values();
+        }
     }
 
 }
